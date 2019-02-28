@@ -9,11 +9,11 @@
 * ***Context-manager***
 
 
-    with Profiler(func, *args,**kwargs) as result:
-        pass
+    with Profiler():
+        func(*args,**kwargs)
 * ***Декоратор***
 
 
-    @Profiler
+    @Profiler()
     def func(*args,**kwargs):
         pass
