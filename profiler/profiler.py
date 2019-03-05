@@ -48,17 +48,3 @@ class Profiler(ContextDecorator):
         for type_, count in self.collected_objects.items():
             print(f'\t{type_} : {count}')
         print('-------------------  Report end  --------------------')
-
-
-@Profiler()
-def guu(foo, bar):
-    print(foo)
-    print(bar)
-    lst = []
-    lst.append(lst)
-    t = (1, 3, 'dfghjkl')
-    time.sleep(2)
-    return 123456
-
-
-print(guu(1, 2))
