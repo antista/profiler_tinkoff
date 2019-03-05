@@ -2,6 +2,7 @@ import gc
 import pstats
 import time
 import cProfile
+from collections import defaultdict
 from contextlib import ContextDecorator
 
 
@@ -17,27 +18,47 @@ class Profiler(ContextDecorator):
 
     def __exit__(self, *exc):
         self.pr.disable()
-
-        self.collected = gc.get_count()[0] + gc.get_count()[1] + gc.get_count()[2]
         self.work_time = time.time() - self.start
+        self.collect_gc_stat()
+        self.collect_profile_stat()
+        self.print_report()
+
+        return self
+
+    def collect_gc_stat(self):
+        self.collected = 0
+        for generation in gc.get_stats():
+            self.collected += generation['collected']
         self.curcle_links = gc.collect()
+
+        self.collected_objects = defaultdict(int)
+        for item in gc.garbage:
+            self.collected_objects[type(item)] += 1
+
+    def collect_profile_stat(self):
         sortby = pstats.SortKey.CUMULATIVE
         self.ps = pstats.Stats(self.pr).sort_stats(sortby)
 
-        self.garbage = gc.garbage
-        self.collected_objects = dict()
-        for item in self.garbage:
-            if type(item) not in self.collected_objects:
-                self.collected_objects[type(item)] = 1
-            else:
-                self.collected_objects[type(item)] += 1
-        self.print_res()
-        return self
-
-    def print_res(self):
+    def print_report(self):
+        print('------------------  Report start  -------------------')
         self.ps.print_stats()
-        print('Overall time of work: {} sec'.format(self.work_time))
-        print('Count of collected objects by gc: {}'.format(self.collected))
-        print('Objects with circle links: {} :'.format(self.curcle_links))
-        for key in self.collected_objects.keys():
-            print('     {0} : {1}'.format(key, self.collected_objects[key]))
+        print(f'Overall time of work: {self.work_time} sec')
+        print(f'Count of collected objects by gc: {self.collected}')
+        print(f'Objects with circle links: {self.curcle_links} :')
+        for type_, count in self.collected_objects.items():
+            print(f'\t{type_} : {count}')
+        print('-------------------  Report end  --------------------')
+
+
+@Profiler()
+def guu(foo, bar):
+    print(foo)
+    print(bar)
+    lst = []
+    lst.append(lst)
+    t = (1, 3, 'dfghjkl')
+    time.sleep(2)
+    return 123456
+
+
+print(guu(1, 2))
